@@ -5,6 +5,24 @@ Created on Tue Nov 27 22:10:53 2018
 @author: Pawan
 """
 
+
+
+def ratioCheck(area, width, height):
+	ratio = float(width) / float(height)
+	if ratio < 1:
+		ratio = 1 / ratio
+
+	aspect = 4
+	min = 15*aspect*15  # minimum area
+	max = 125*aspect*125  # maximum area
+
+	rmin = 3
+	rmax = 6
+
+	if (area < min or area > max) or (ratio < rmin or ratio > rmax):
+		return False
+	return True
+
 import numpy as np
 import cv2 
 img = cv2.imread('test3.jpg')
