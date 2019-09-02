@@ -6,6 +6,14 @@ Created on Mon Sep  2 10:53:16 2019
 """
 import cv2
 import numpy as np
+import os 
+import ImagePreprocessing
+import pytesseract
+from pytesseract import image_to_string
+
+00000000000config = ('-l eng --oem 1 --psm 3')
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe"
+
 
 kernel_sharp = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
 kernel_erode = np.ones((1, 1), np.uint8)
@@ -26,51 +34,81 @@ def dialte_img(img,kernel):
     img = cv2.dilate(img, kernel, iterations = 1)
     return img
 
-img = cv2.imread('./Traning Images/car10.jpg')
-
-org_img = img
-cv2.imshow('original_img',img)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-
-#img = sharp_img(img,kernel_sharp)
-#cv2.imshow('sharp_img',img)
-#cv2.waitKey(0)
-#cv2.destroyAllWindows()
-
-
-img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-cv2.imshow('cvt_img',img)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+def crop_image(img):
+    h,w,r = img.shape
+    y = int(h/4)
+   
+    roi = img[225:275,200:450]
+    cv2.imshow('roi',roi)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    text = pytesseract.image_to_string(roi, config=config) 
+    print(text)
+    return roi
 
 
-ret, img = cv2.threshold(img, 65, 255, 0)
-cv2.imshow('thershold_img',img)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+def load_images_from_folder(folder):
+    images = []
+    for filename in os.listdir(folder):
+        img = cv2.imread(os.path.join(folder,filename))
+        if img is not None:
+            images.append(img)
+    return images
+
+list_img = load_images_from_folder('Traning Images')
 
 
+for img in list_img:
 
+    img = crop_image(img)
+    org_img = img
+    cv2.imshow('original_img',img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
-
-im2, contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-cnt = 0
-for index,contour in enumerate(contours):
-    (x,y,w,h) = cv2.boundingRect(contour)
-    ratio = float(w) / float(h)
-    roi = img[y:y+h,x:x+w]
-    if ratio < 1 and whiteBack(roi):
-        cv2.rectangle(org_img, (x,y), (x+w,y+h), (0,255,255), 1)  
-        cnt = cnt+1
-        print(x,y,w,h)
-        
-print(cnt)        
-cv2.imshow('countour Img',org_img)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-
-
+    #img = sharp_img(img,kernel_sharp)
+    #cv2.imshow('sharp_img',img)
+    #cv2.waitKey(0)
+    #cv2.destroyAllWindows()
+    
+    
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    cv2.imshow('cvt_img',img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    
+    
+    #ret, img = cv2.threshold(img, 20, 255, 0)
+    img = cv2.adaptiveThreshold(img,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,2)
+    cv2.imshow('thershold_img',img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    
+    
+    
+    
+    
+    
+    
+    im2, contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    cnt = 0
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    for index,contour in enumerate(contours):
+        (x,y,w,h) = cv2.boundingRect(contour)
+        ratio = float(w) / float(h)
+        roi = img[y:y+h,x:x+w]
+        if ratio < 1 and whiteBack(roi):
+            cnt = cnt+1
+            cv2.rectangle(org_img, (x,y), (x+w,y+h), (0,255,255), 1)  
+            cv2.putText(org_img,str(cnt),(x,y),font,0.5,(0,255,255),1,cv2.LINE_4)
+#            print(x,y,w,h,'avg',np.mean(roi))
+            
+#    print(cnt)        
+    cv2.imshow('countour Img',org_img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    
+    
 
 
 #
